@@ -2,9 +2,6 @@ import httpx
 from mcp.types import TextContent
 
 async def handle_get_weather(city: str) -> list[TextContent]:
-    """
-    Obtener el clima actual de una ciudad específica usando Open-Meteo API.
-    """
     try:
         geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=es&format=json"
         
