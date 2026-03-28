@@ -16,16 +16,9 @@ async def get_weather(city: str) -> str:
     results = await handle_get_weather(city)
     return results[0].text
 
+mcp_app = mcp.sse_app()
+
 if __name__ == "__main__":
-    print("Forzando a Uvicorn a abrir el puerto 0.0.0.0...")
+    print("Arrancando Uvicorn nativo en 0.0.0.0:8000 para Coolify...")
     
-    # --- LA TRAMPA: Interceptamos Uvicorn para forzar la IP y el puerto ---
-    original_run = uvicorn.run
-    def custom_run(*args, **kwargs):
-        kwargs['host'] = "0.0.0.0"
-        kwargs['port'] = 8000
-        return original_run(*args, **kwargs)
-    uvicorn.run = custom_run
-    # ----------------------------------------------------------------------
-    
-    mcp.run(transport="sse")
+    uvicorn.run(mcp_app, host="0.0.0.0", port=8000)
