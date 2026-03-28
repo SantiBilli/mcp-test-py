@@ -9,8 +9,9 @@ async def test_mcp():
 
     # base_url = "https://methodology-usb-facility-offline.trycloudflare.com"
     # base_url = "http://localhost:8000"
-    base_url = "https://fbe8-170-239-171-159.ngrok-free.app"
+    base_url = "https://o8w0k8s4kk444os0kwkc0wo4.179.43.121.236.sslip.io"
         
+
     baseUrl = base_url.rstrip('/')
     sse_url = f"{baseUrl}/sse"
     
