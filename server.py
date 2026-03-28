@@ -16,16 +16,9 @@ async def get_weather(city: str) -> str:
     results = await handle_get_weather(city)
     return results[0].text
 
-
 mcp_app = mcp.sse_app()
 
 if __name__ == "__main__":
-    print("Arrancando Uvicorn nativo en 0.0.0.0:8000 (con soporte para Proxy en Coolify)...")
+    print("Arrancando Uvicorn nativo en 0.0.0.0:8000 para Coolify...")
     
-    uvicorn.run(
-        mcp_app, 
-        host="0.0.0.0", 
-        port=8000, 
-        proxy_headers=True,       
-        forwarded_allow_ips="*"     
-    )
+    uvicorn.run(mcp_app, host="0.0.0.0", port=8000)
