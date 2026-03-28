@@ -1,12 +1,15 @@
 import asyncio
 import sys
+import traceback  # <-- Importación agregada para desglosar el error
 from mcp.client.sse import sse_client
 from mcp.client.session import ClientSession
 
 async def test_mcp():
     print("Iniciando cliente de prueba MCP...")
-    
-    base_url = "http://localhost:8000"
+
+    # base_url = "https://methodology-usb-facility-offline.trycloudflare.com"
+    # base_url = "http://localhost:8000"
+    base_url = "https://fbe8-170-239-171-159.ngrok-free.app"
         
     baseUrl = base_url.rstrip('/')
     sse_url = f"{baseUrl}/sse"
@@ -34,7 +37,9 @@ async def test_mcp():
                 print("\n💡 El servidor responde correctamente. Saliendo...")
                 
     except Exception as err:
-        print(f"\n❌ Error de conexión conectando al servidor: {err}", file=sys.stderr)
+        print("\n❌ Error de conexión conectando al servidor. Detalle técnico:", file=sys.stderr)
+        # Esto imprimirá la traza completa (traceback) en lugar de solo "TaskGroup (1 sub-exception)"
+        traceback.print_exc()
 
 if __name__ == "__main__":
     try:
