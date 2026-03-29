@@ -6,11 +6,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
-# Importamos tus herramientas directamente
 from tools.create_file import handle_create_file
 from tools.get_weather import handle_get_weather
 
-# --- EL TRADUCTOR NATIVO PARA COPILOT ---
 async def mcp_direct_handler(request: Request):
     try:
         payload = await request.json()
@@ -22,7 +20,6 @@ async def mcp_direct_handler(request: Request):
 
     print(f"🤖 Copilot solicita: {method}")
 
-    # 1. Copilot saluda
     if method == "initialize":
         return JSONResponse({
             "jsonrpc": "2.0",
@@ -34,11 +31,9 @@ async def mcp_direct_handler(request: Request):
             }
         })
 
-    # 2. Copilot confirma conexión
     elif method == "notifications/initialized":
         return JSONResponse({"jsonrpc": "2.0"})
 
-    # 3. Copilot pide la lista de herramientas
     elif method == "tools/list":
         return JSONResponse({
             "jsonrpc": "2.0",
@@ -72,7 +67,6 @@ async def mcp_direct_handler(request: Request):
             }
         })
 
-    # 4. Copilot ejecuta una herramienta
     elif method == "tools/call":
         params = payload.get("params", {})
         tool_name = params.get("name")
@@ -102,7 +96,6 @@ async def mcp_direct_handler(request: Request):
 
     return JSONResponse({"jsonrpc": "2.0", "id": msg_id})
 
-# Escuchamos en todas las rutas posibles por si Copilot se equivoca
 app = Starlette(routes=[
     Route("/", endpoint=mcp_direct_handler, methods=["POST", "GET"]),
     Route("/sse", endpoint=mcp_direct_handler, methods=["POST", "GET"]),
