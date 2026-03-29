@@ -6,7 +6,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
-from tools.create_file import handle_create_file
 from tools.get_weather import handle_get_weather
 
 async def mcp_direct_handler(request: Request):
@@ -41,18 +40,6 @@ async def mcp_direct_handler(request: Request):
             "result": {
                 "tools": [
                     {
-                        "name": "create_file",
-                        "description": "Crea un archivo de texto en la computadora local",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "path": {"type": "string", "description": "Ruta de la carpeta"},
-                                "name": {"type": "string", "description": "Nombre del archivo"}
-                            },
-                            "required": ["path", "name"]
-                        }
-                    },
-                    {
                         "name": "get_weather",
                         "description": "Obtiene el clima actual de una ciudad",
                         "inputSchema": {
@@ -75,10 +62,7 @@ async def mcp_direct_handler(request: Request):
         print(f"⚙️ Ejecutando: {tool_name} con {args}")
 
         try:
-            if tool_name == "create_file":
-                res = await handle_create_file(args.get("path"), args.get("name"))
-                result_text = res[0].text
-            elif tool_name == "get_weather":
+            if tool_name == "get_weather":
                 res = await handle_get_weather(args.get("city"))
                 result_text = res[0].text
             else:
