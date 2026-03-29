@@ -3,7 +3,8 @@ import uvicorn
 from mcp.server.fastmcp import FastMCP
 from tools.create_file import handle_create_file
 from tools.get_weather import handle_get_weather
-from starlette.middleware.cors import CORSMiddleware  # <-- Importamos el portero CORS
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware # <-- Importamos el interceptor
 
 mcp = FastMCP("mcp-server")
 
@@ -23,19 +24,29 @@ async def get_weather(city: str) -> str:
 # 1. Extraemos la aplicación web nativa
 mcp_app = mcp.sse_app()
 
-# 2. Le ponemos el "portero" CORS para que apruebe las peticiones de Microsoft
+# --- EL TRUCO PARA DOMAR A COPILOT STUDIO ---
+class CopilotRewriteMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        # Si Copilot intenta hacer un POST a la ruta /sse, lo redirigimos a /messages
+        if request.method == "POST" and request.url.path.endswith("/sse"):
+            request.scope["path"] = "/messages"
+        return await call_next(request)
+
+mcp_app.add_middleware(CopilotRewriteMiddleware)
+# --------------------------------------------
+
+# 2. Le ponemos el "portero" CORS
 app_with_cors = CORSMiddleware(
     app=mcp_app,
-    allow_origins=["*"],          # Permite conexiones desde cualquier página (incluido Copilot)
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],          # Permite GET, POST, OPTIONS, etc.
-    allow_headers=["*"],          # Permite cualquier cabecera
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
-    print("🚀 Arrancando Uvicorn nativo en 0.0.0.0:8000 con CORS y Proxy...")
+    print("🚀 Arrancando Uvicorn nativo con adaptador para Copilot Studio...")
     
-    # 3. Corremos la aplicación ya envuelta con CORS
     uvicorn.run(
         app_with_cors, 
         host="0.0.0.0", 
