@@ -3,7 +3,7 @@ import uvicorn
 from mcp.server.fastmcp import FastMCP
 from tools.create_file import handle_create_file
 from tools.get_weather import handle_get_weather
-from starlette.middleware.cors import CORSMiddleware  # <-- Importamos el portero CORS
+from starlette.middleware.cors import CORSMiddleware
 
 mcp = FastMCP("mcp-server")
 
@@ -20,22 +20,31 @@ async def get_weather(city: str) -> str:
     results = await handle_get_weather(city)
     return results[0].text
 
-# 1. Extraemos la aplicación web nativa
 mcp_app = mcp.sse_app()
 
-# 2. Le ponemos el "portero" CORS para que apruebe las peticiones de Microsoft
+class PureASGIRewriteMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            if scope["method"] == "POST" and scope["path"].endswith("/sse"):
+                scope["path"] = "/messages"
+        await self.app(scope, receive, send)
+
+app_rewritten = PureASGIRewriteMiddleware(mcp_app)
+
 app_with_cors = CORSMiddleware(
-    app=mcp_app,
-    allow_origins=["*"],          # Permite conexiones desde cualquier página (incluido Copilot)
+    app=app_rewritten,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],          # Permite GET, POST, OPTIONS, etc.
-    allow_headers=["*"],          # Permite cualquier cabecera
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 if __name__ == "__main__":
-    print("🚀 Arrancando Uvicorn nativo en 0.0.0.0:8000 con CORS y Proxy...")
+    print("🚀 Arrancando Uvicorn con Interceptor ASGI y CORS para Copilot Studio...")
     
-    # 3. Corremos la aplicación ya envuelta con CORS
     uvicorn.run(
         app_with_cors, 
         host="0.0.0.0", 
