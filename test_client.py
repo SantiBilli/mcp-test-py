@@ -1,49 +1,45 @@
-import asyncio
 import sys
-import traceback  # <-- Importación agregada para desglosar el error
-from mcp.client.sse import sse_client
-from mcp.client.session import ClientSession
+import uvicorn
+from mcp.server.fastmcp import FastMCP
+from tools.create_file import handle_create_file
+from tools.get_weather import handle_get_weather
+from starlette.middleware.cors import CORSMiddleware  # <-- Importamos el portero CORS
 
-async def test_mcp():
-    print("Iniciando cliente de prueba MCP...")
+mcp = FastMCP("mcp-server")
 
-    # base_url = "https://methodology-usb-facility-offline.trycloudflare.com"
-    # base_url = "http://localhost:8000"
-    base_url = "https://o8w0k8s4kk444os0kwkc0wo4.179.43.121.236.sslip.io"
-        
+@mcp.tool()
+async def create_file(path: str, name: str) -> str:
+    print(f"📝 [LOG HERRAMIENTA] Copilot quiere crear el archivo '{name}' en '{path}'")
+    results = await handle_create_file(path, name)
+    print(f"✅ [LOG HERRAMIENTA] Archivo '{name}' creado con éxito.")
+    return results[0].text
 
-    baseUrl = base_url.rstrip('/')
-    sse_url = f"{baseUrl}/sse"
-    
-    print(f"\n⏳ Conectando por SSE a: {sse_url}...")
-    
-    try:
-        async with sse_client(sse_url) as streams:
-            async with ClientSession(streams[0], streams[1]) as session:
-                
-                await session.initialize()
-                print("✅ ¡Conectado exitosamente al servidor MCP!\n")
-                
-                print("🔎 Consultando herramientas configuradas en el servidor...")
-                tools_response = await session.list_tools()
-                
-                if not tools_response.tools:
-                    print("No se encontraron herramientas (tools=[]).")
-                else:
-                    print(f"\n🛠️ Se encontraron {len(tools_response.tools)} herramientas:")
-                    for t in tools_response.tools:
-                        desc = t.description if t.description else "Sin descripción"
-                        print(f"  - {t.name}: {desc}")
-                
-                print("\n💡 El servidor responde correctamente. Saliendo...")
-                
-    except Exception as err:
-        print("\n❌ Error de conexión conectando al servidor. Detalle técnico:", file=sys.stderr)
-        # Esto imprimirá la traza completa (traceback) en lugar de solo "TaskGroup (1 sub-exception)"
-        traceback.print_exc()
+@mcp.tool()
+async def get_weather(city: str) -> str:
+    print(f"🌍 [LOG HERRAMIENTA] Copilot está consultando el clima para: {city}")
+    results = await handle_get_weather(city)
+    return results[0].text
+
+# 1. Extraemos la aplicación web nativa
+mcp_app = mcp.sse_app()
+
+# 2. Le ponemos el "portero" CORS para que apruebe las peticiones de Microsoft
+app_with_cors = CORSMiddleware(
+    app=mcp_app,
+    allow_origins=["*"],          # Permite conexiones desde cualquier página (incluido Copilot)
+    allow_credentials=True,
+    allow_methods=["*"],          # Permite GET, POST, OPTIONS, etc.
+    allow_headers=["*"],          # Permite cualquier cabecera
+)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(test_mcp())
-    except KeyboardInterrupt:
-        print("\nSaliendo...")
+    print("🚀 Arrancando Uvicorn nativo en 0.0.0.0:8000 con CORS y Proxy...")
+    
+    # 3. Corremos la aplicación ya envuelta con CORS
+    uvicorn.run(
+        app_with_cors, 
+        host="0.0.0.0", 
+        port=8000, 
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )
