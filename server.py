@@ -9,7 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from tools.onedrive import create_json_onedrive, modify_json_onedrive, delete_json_onedrive
+from tools.onedrive import create_json_onedrive, read_json_onedrive, modify_json_onedrive, delete_json_onedrive
 from tools.get_weather import handle_get_weather
 
 async def mcp_direct_handler(request: Request):
@@ -40,83 +40,63 @@ async def mcp_direct_handler(request: Request):
             "id": msg_id,
             "result": {
                 "tools": [
-                {
-                    "name": "get_weather",
-                    "description": "Obtiene el clima actual de una ciudad",
-                    "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "city": {
-                        "type": "string",
-                        "description": "Nombre de la ciudad"
+                    {
+                        "name": "get_weather",
+                        "description": "Obtiene el clima actual de una ciudad",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "city": {"type": "string", "description": "Nombre de la ciudad"}
+                            },
+                            "required": ["city"]
                         }
                     },
-                    "required": ["city"]
-                    }
-                },
-                {
-                    "name": "create_json_onedrive",
-                    "description": "Crea un nuevo archivo JSON base en OneDrive",
-                    "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "filename": {
-                        "type": "string",
-                        "description": "Nombre del archivo (sin .json)"
+                    {
+                        "name": "create_json_onedrive",
+                        "description": "Crea un nuevo archivo JSON base en OneDrive",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "filename": {"type": "string", "description": "Nombre del archivo (sin .json)"}
+                            },
+                            "required": ["filename"]
                         }
                     },
-                    "required": ["filename"]
-                    }
-                },
-                {
-                    "name": "read_json_onedrive",
-                    "description": "Lee un archivo JSON desde OneDrive",
-                    "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "filename": {
-                        "type": "string",
-                        "description": "Nombre del archivo (sin .json)"
+                    {
+                        "name": "read_json_onedrive",
+                        "description": "Lee un archivo JSON desde OneDrive",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "filename": {"type": "string", "description": "Nombre del archivo (sin .json)"}
+                            },
+                            "required": ["filename"]
                         }
                     },
-                    "required": ["filename"]
-                    }
-                },
-                {
-                    "name": "modify_json_onedrive",
-                    "description": "Modifica o agrega una propiedad en un JSON",
-                    "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "filename": {
-                        "type": "string",
-                        "description": "Nombre del archivo"
-                        },
-                        "key": {
-                        "type": "string",
-                        "description": "Propiedad a modificar"
-                        },
-                        "value": {
-                        "description": "Nuevo valor (puede ser cualquier tipo JSON)"
+                    {
+                        "name": "modify_json_onedrive",
+                        "description": "Modifica o agrega una propiedad en un JSON",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "filename": {"type": "string", "description": "Nombre del archivo"},
+                                "key": {"type": "string", "description": "Propiedad a modificar"},
+                                "value": {"description": "Nuevo valor (puede ser cualquier tipo JSON)"}
+                            },
+                            "required": ["filename", "key", "value"]
                         }
                     },
-                    "required": ["filename", "key", "value"]
-                    }
-                },
-                {
-                    "name": "delete_json_onedrive",
-                    "description": "Elimina un archivo JSON de OneDrive",
-                    "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "filename": {
-                        "type": "string",
-                        "description": "Nombre del archivo"
+                    {
+                        "name": "delete_json_onedrive",
+                        "description": "Elimina un archivo JSON de OneDrive",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "filename": {"type": "string", "description": "Nombre del archivo"}
+                            },
+                            "required": ["filename"]
                         }
-                    },
-                    "required": ["filename"]
                     }
-                }
                 ]
             }
         })
@@ -134,6 +114,8 @@ async def mcp_direct_handler(request: Request):
                 result_text = res[0].text
             elif tool_name == "create_json_onedrive":
                 result_text = await create_json_onedrive(args.get("filename"))
+            elif tool_name == "read_json_onedrive":
+                result_text = await read_json_onedrive(args.get("filename"))
             elif tool_name == "modify_json_onedrive":
                 result_text = await modify_json_onedrive(args.get("filename"), args.get("key"), str(args.get("value")))
             elif tool_name == "delete_json_onedrive":
