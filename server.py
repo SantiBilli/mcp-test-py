@@ -1,4 +1,9 @@
 import sys
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import uvicorn
 from starlette.applications import Starlette
 from starlette.routing import Route
@@ -7,6 +12,10 @@ from starlette.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
 from tools.get_weather import handle_get_weather
+
+CLIENT_ID=os.getenv("MICROSOFT_CLIENT_ID")
+CLIENT_SECRET=os.getenv("MICROSOFT_CLIENT_SECRET")
+REFRESH_TOKEN=os.getenv("MICROSOFT_REFRESH_TOKEN")
 
 async def mcp_direct_handler(request: Request):
     try:
