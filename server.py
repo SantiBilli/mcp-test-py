@@ -133,7 +133,7 @@ async def mcp_direct_handler(request: Request):
                 res = await handle_get_weather(args.get("city"))
                 result_text = res[0].text
             elif tool_name == "create_json_onedrive":
-                result_text = await create_json_onedrive(args.get("filename"), args.get("initial_data"))
+                result_text = await create_json_onedrive(args.get("filename"))
             elif tool_name == "modify_json_onedrive":
                 result_text = await modify_json_onedrive(args.get("filename"), args.get("key"), str(args.get("value")))
             elif tool_name == "delete_json_onedrive":
