@@ -17,16 +17,34 @@ REFRESH_TOKEN = os.getenv("MICROSOFT_REFRESH_TOKEN")
 # --- LÓGICA DE ONEDRIVE ---
 async def get_access_token():
     """Usa tu Refresh Token eterno para conseguir un pase temporal de 60 minutos"""
-    url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+    
+    # 1. Imprimimos los primeros caracteres para confirmar que Coolify sí está leyendo las variables
+    print("\n" + "="*40)
+    print(f"🔍 DIAGNÓSTICO DE LLAVES:")
+    print(f"ID: {str(CLIENT_ID)[:5]}... (Longitud: {len(str(CLIENT_ID))})")
+    print(f"SECRET: {str(CLIENT_SECRET)[:3]}... (Longitud: {len(str(CLIENT_SECRET))})")
+    print(f"TOKEN: {str(REFRESH_TOKEN)[:5]}... (Longitud: {len(str(REFRESH_TOKEN))})")
+    
+    # 2. Usamos el endpoint 'common' que es más permisivo
+    url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
     data = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
         "refresh_token": REFRESH_TOKEN,
         "grant_type": "refresh_token",
     }
+    
     async with httpx.AsyncClient() as client:
         res = await client.post(url, data=data)
-        res.raise_for_status()
+        
+        # 3. Si Microsoft nos rechaza, atrapamos el mensaje exacto
+        if res.status_code != 200:
+            print(f"🚨 RECHAZO DE MICROSOFT: {res.text}")
+            print("="*40 + "\n")
+            raise Exception(f"Microsoft rechazó el acceso: {res.text}")
+            
+        print("✅ Token temporal generado con éxito.")
+        print("="*40 + "\n")
         return res.json()["access_token"]
 
 async def create_json_onedrive(filename: str, initial_data: dict) -> str:
