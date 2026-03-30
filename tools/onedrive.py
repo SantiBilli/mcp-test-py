@@ -1,6 +1,8 @@
+import sys
 import os
 import json
 import httpx
+import uuid 
 
 CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
@@ -8,12 +10,6 @@ REFRESH_TOKEN = os.getenv("MICROSOFT_REFRESH_TOKEN")
 
 async def get_access_token():
     """Genera un access token temporal usando el refresh token."""
-    print("\n" + "="*40)
-    print(f"🔍 DIAGNÓSTICO DE LLAVES:")
-    print(f"ID: {str(CLIENT_ID)[:5]}... (Longitud: {len(str(CLIENT_ID))})")
-    print(f"SECRET: {str(CLIENT_SECRET)[:3]}... (Longitud: {len(str(CLIENT_SECRET))})")
-    print(f"TOKEN: {str(REFRESH_TOKEN)[:5]}... (Longitud: {len(str(REFRESH_TOKEN))})")
-    
     url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
     data = {
         "client_id": CLIENT_ID,
@@ -23,26 +19,45 @@ async def get_access_token():
     
     async with httpx.AsyncClient() as client:
         res = await client.post(url, data=data)
-        
         if res.status_code != 200:
             print(f"🚨 RECHAZO DE MICROSOFT: {res.text}")
-            print("="*40 + "\n")
             raise Exception(f"Microsoft rechazó el acceso: {res.text}")
-            
-        print("✅ Token temporal generado con éxito.")
-        print("="*40 + "\n")
         return res.json()["access_token"]
 
-async def create_json_onedrive(filename: str, initial_data: dict) -> str:
-    """Crea un archivo JSON en la carpeta AutoClickFiles de OneDrive."""
+async def create_json_onedrive(filename: str, nombre: str) -> str:
+    """Crea un archivo JSON en la carpeta AutoClickFiles con la estructura base estricta."""
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
+    
+    bot_id = f"BOT_{uuid.uuid4().hex[:6].upper()}"
+    
+    estructura_base = {
+        "id": bot_id,
+        "nombre": nombre,
+        "bloques": []
+    }
+
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     
     async with httpx.AsyncClient() as client:
-        res = await client.put(url, headers=headers, content=json.dumps(initial_data, indent=4))
+        res = await client.put(url, headers=headers, content=json.dumps(estructura_base, indent=4))
         res.raise_for_status()
-    return f"✅ Archivo {filename}.json creado exitosamente en tu carpeta AutoClickFiles de OneDrive."
+    return f"✅ Archivo {filename}.json creado con éxito. ID asignado: {bot_id}"
+
+async def read_json_onedrive(filename: str) -> str:
+    """Lee y devuelve el contenido de un archivo JSON específico."""
+    token = await get_access_token()
+    url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        res = await client.get(url, headers=headers)
+        if res.status_code == 404:
+            return f"❌ Error: El archivo {filename}.json no existe en OneDrive."
+        res.raise_for_status()
+        
+        contenido = json.dumps(res.json(), indent=4)
+        return f"📄 Contenido de {filename}.json:\n```json\n{contenido}\n```"
 
 async def modify_json_onedrive(filename: str, key: str, value: str) -> str:
     """Modifica o agrega un valor en un archivo JSON existente en AutoClickFiles."""
@@ -50,7 +65,7 @@ async def modify_json_onedrive(filename: str, key: str, value: str) -> str:
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
     headers = {"Authorization": f"Bearer {token}"}
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         get_res = await client.get(url, headers=headers)
         if get_res.status_code == 404:
             return f"❌ Error: El archivo {filename}.json no existe en OneDrive."
