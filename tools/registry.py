@@ -113,5 +113,14 @@ TOOL_DEFINITIONS = [
             },
             "required": ["filename", "block_id"]
         }
+    },
+    {
+        "name": "list_bots_onedrive",
+        "description": "Obtiene la lista de todos los bots guardados en la carpeta. Úsala cuando el usuario te pida ver qué bots tiene disponibles.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
     }
 ]
