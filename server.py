@@ -36,56 +36,87 @@ async def mcp_direct_handler(request: Request):
 
     elif method == "tools/list":
         return JSONResponse({
-            "jsonrpc": "2.0", "id": msg_id,
+            "jsonrpc": "2.0",
+            "id": msg_id,
             "result": {
                 "tools": [
-                    {
-                        "name": "get_weather",
-                        "description": "Obtiene el clima actual de una ciudad",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "city": {"type": "string", "description": "Nombre de la ciudad"}
-                            },
-                            "required": ["city"]
+                {
+                    "name": "get_weather",
+                    "description": "Obtiene el clima actual de una ciudad",
+                    "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "city": {
+                        "type": "string",
+                        "description": "Nombre de la ciudad"
                         }
                     },
-                    {
-                        "name": "create_json_onedrive",
-                        "description": "Crea un nuevo archivo JSON en la carpeta AutoClickFiles de OneDrive",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "filename": {"type": "string", "description": "Nombre del archivo (sin .json)"},
-                                "initial_data": {"type": "object", "description": "Diccionario JSON con los datos iniciales"}
-                            },
-                            "required": ["filename", "initial_data"]
-                        }
-                    },
-                    {
-                        "name": "modify_json_onedrive",
-                        "description": "Modifica o agrega un valor en un archivo JSON existente en AutoClickFiles",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "filename": {"type": "string", "description": "Nombre del archivo (sin .json)"},
-                                "key": {"type": "string", "description": "La llave o propiedad a modificar"},
-                                "value": {"type": "string", "description": "El nuevo valor"}
-                            },
-                            "required": ["filename", "key", "value"]
-                        }
-                    },
-                    {
-                        "name": "delete_json_onedrive",
-                        "description": "Elimina un archivo JSON de la carpeta AutoClickFiles en OneDrive",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "filename": {"type": "string", "description": "Nombre del archivo (sin .json)"}
-                            },
-                            "required": ["filename"]
-                        }
+                    "required": ["city"]
                     }
+                },
+                {
+                    "name": "create_json_onedrive",
+                    "description": "Crea un nuevo archivo JSON base en OneDrive",
+                    "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {
+                        "type": "string",
+                        "description": "Nombre del archivo (sin .json)"
+                        }
+                    },
+                    "required": ["filename"]
+                    }
+                },
+                {
+                    "name": "read_json_onedrive",
+                    "description": "Lee un archivo JSON desde OneDrive",
+                    "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {
+                        "type": "string",
+                        "description": "Nombre del archivo (sin .json)"
+                        }
+                    },
+                    "required": ["filename"]
+                    }
+                },
+                {
+                    "name": "modify_json_onedrive",
+                    "description": "Modifica o agrega una propiedad en un JSON",
+                    "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {
+                        "type": "string",
+                        "description": "Nombre del archivo"
+                        },
+                        "key": {
+                        "type": "string",
+                        "description": "Propiedad a modificar"
+                        },
+                        "value": {
+                        "description": "Nuevo valor (puede ser cualquier tipo JSON)"
+                        }
+                    },
+                    "required": ["filename", "key", "value"]
+                    }
+                },
+                {
+                    "name": "delete_json_onedrive",
+                    "description": "Elimina un archivo JSON de OneDrive",
+                    "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {
+                        "type": "string",
+                        "description": "Nombre del archivo"
+                        }
+                    },
+                    "required": ["filename"]
+                    }
+                }
                 ]
             }
         })

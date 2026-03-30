@@ -24,7 +24,7 @@ async def get_access_token():
             raise Exception(f"Microsoft rechazó el acceso: {res.text}")
         return res.json()["access_token"]
 
-async def create_json_onedrive(filename: str, nombre: str) -> str:
+async def create_json_onedrive(filename: str) -> str:
     """Crea un archivo JSON en la carpeta AutoClickFiles con la estructura base estricta."""
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
@@ -33,7 +33,7 @@ async def create_json_onedrive(filename: str, nombre: str) -> str:
     
     estructura_base = {
         "id": bot_id,
-        "nombre": nombre,
+        "nombre": filename,
         "bloques": []
     }
 
