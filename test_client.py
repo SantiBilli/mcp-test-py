@@ -7,9 +7,8 @@ from mcp.client.session import ClientSession
 async def test_mcp():
     print("Iniciando cliente de prueba MCP...")
 
-    # base_url = "https://methodology-usb-facility-offline.trycloudflare.com"
-    # base_url = "http://localhost:8000"
-    base_url = "https://o8w0k8s4kk444os0kwkc0wo4.179.43.121.236.sslip.io"
+    base_url = "http://localhost:8000"
+
         
 
     baseUrl = base_url.rstrip('/')

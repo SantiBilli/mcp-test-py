@@ -1,36 +1,86 @@
-# Servidor MCP (Model Context Protocol) en Python
+# 📂 MCP Server: Gestión de OneDrive para IA
 
-Este proyecto implementa un servidor Web que actúa como host bajo el **Model Context Protocol (MCP)** utilizando Python. Su objetivo es permitir a asistentes de inteligencia artificial (como Copilot u otros LLMs) descubrir e invocar herramientas personalizadas para interactuar con tu entorno local y servicios externos.
+Este proyecto es un servidor **MCP (Model Context Protocol)** que permite a asistentes de inteligencia artificial (como ChatGPT, Copilot o Claude) gestionar archivos en tu **OneDrive** de forma automática. 
 
-## 🛠️ Tecnologías Usadas y Por Qué
+Imagina que puedes decirle a la IA: *"Crea un archivo de configuración para mi nueva app en OneDrive"* y la IA lo hace por ti usando este servidor.
 
-- **[Python](https://www.python.org/)**: Lenguaje principal del servidor, elegido por su simplicidad y gran ecosistema para integrar herramientas y APIs.
-- **[Starlette](https://www.starlette.io/)**: Framework web ASGI ligero y de alto rendimiento. Se encarga de manejar las rutas HTTP (como `/`, `/sse`, `/messages`), recibir los payloads JSON de las peticiones del LLM y devolver las respuestas correspondientes.
-- **[Uvicorn](https://www.uvicorn.org/)**: Servidor web ASGI ultrarrápido. Proporciona la infraestructura de red para ejecutar la aplicación web de Starlette, manteniéndola accesible en el puerto local (`8000`).
-- **[uv](https://docs.astral.sh/uv/)**: Gestor de paquetes y entornos virtuales para Python extremadamente rápido (creado en Rust). Se utiliza en este proyecto para ejecutar los scripts (`uv run`) de manera eficiente, instalando dependencias al vuelo si es necesario y gestionando el entorno.
+---
 
-## ⚙️ Arquitectura y Herramientas (Tools)
+## 🌟 ¿Qué hace este servidor?
 
-El punto de entrada principal del servidor es `server.py`. Este archivo define un manejador genérico que procesa los mensajes del protocolo MCP (como `initialize`, `tools/list`, y `tools/call`). 
+Este servidor actúa como un "traductor" entre la IA y la API de Microsoft. Expone herramientas específicas que la IA puede "ver" y "usar" para:
+1.  **Crear** archivos JSON en una carpeta específica (`AutoClickFiles`).
+2.  **Modificar** datos dentro de esos archivos.
+3.  **Eliminar** archivos cuando ya no sean necesarios.
 
-Las herramientas ejecutables (las acciones concretas que el asistente puede solicitar) están modularizadas dentro de la carpeta `tools/`. Actualmente se expone la siguiente:
+---
 
-1. 🌤️ **`get_weather`** (`tools/get_weather.py`)
-   - **Descripción**: Consulta y devuelve el estado del clima actual en una ubicación específica.
-   - **Parámetros requeridos**: `city` (nombre de la ciudad).
+## 🛠️ Tecnologías Usadas
 
-Cuando la IA decide utilizar alguna herramienta, envía una solicitud `tools/call`. El servidor identifica la herramienta solicitada e invoca de manera asíncrona la función correspondiente (`handle_get_weather`).
+-   **[Python](https://www.python.org/)**: El motor del servidor.
+-   **[Microsoft Graph API](https://developer.microsoft.com/en-us/graph)**: La interfaz oficial de Microsoft para interactuar con OneDrive.
+-   **[Starlette](https://www.starlette.io/) & [Uvicorn](https://www.uvicorn.org/)**: Tecnologías para que el servidor sea rápido y pueda recibir peticiones por internet o localmente.
+-   **[python-dotenv](https://pypi.org/project/python-dotenv/)**: Para manejar de forma segura tus llaves de acceso (tokens).
 
-## 🚀 Cómo ejecutarlo
+---
 
-Para arrancar el servidor MCP localmente y dejarlo a la escucha de las peticiones (por defecto en `http://0.0.0.0:8000`):
+## 🔐 Configuración (Lo que necesitas)
 
+Para que el servidor funcione, necesita permiso para hablar con tu cuenta de Microsoft. Estos datos se guardan en un archivo secreto llamado `.env`:
+
+1.  **MICROSOFT_CLIENT_ID**: El ID de tu aplicación registrada en Azure.
+2.  **MICROSOFT_CLIENT_SECRET**: La contraseña secreta de esa aplicación.
+3.  **MICROSOFT_REFRESH_TOKEN**: Una llave especial que permite al servidor generar accesos temporales sin que tengas que iniciar sesión cada vez.
+
+---
+
+## 🧰 Herramientas Disponibles (Tools)
+
+Cuando conectas este servidor a una IA, ella tendrá estos "superpoderes":
+
+### 1. `create_json_onedrive`
+-   **Uso**: Crea un archivo `.json` nuevo.
+-   **Qué pide**: El nombre del archivo y los datos iniciales (un objeto JSON).
+-   **Ubicación**: Siempre los guarda en la carpeta `/AutoClickFiles/` de tu OneDrive.
+
+### 2. `modify_json_onedrive`
+-   **Uso**: Cambia un valor específico dentro de un archivo que ya existe.
+-   **Qué pide**: Nombre del archivo, la "llave" (nombre del dato) y el nuevo "valor".
+
+### 3. `delete_json_onedrive`
+-   **Uso**: Borra un archivo permanentemente.
+-   **Qué pide**: El nombre del archivo a eliminar.
+
+---
+
+## 🚀 Cómo ponerlo en marcha
+
+### 1. Instalar dependencias
+Asegúrate de tener las librerías necesarias:
 ```bash
-uv run python server.py
+pip install starlette uvicorn httpx python-dotenv
 ```
 
-Para probar la conexión (simulando peticiones de inicialización o llamadas a herramientas como si fueses un cliente MCP):
-
+### 2. Arrancar el servidor
+Ejecuta el servidor para que empiece a escuchar peticiones:
 ```bash
-uv run python test_client.py
+python server.py
 ```
+*El servidor se iniciará usualmente en `http://localhost:8000`.*
+
+---
+
+## 🧪 Pruebas (test_client.py)
+
+Para verificar que todo funciona bien sin usar una IA real todavía, puedes usar el cliente de prueba:
+```bash
+python test_client.py
+```
+Este script intentará conectarse al servidor, listar las herramientas disponibles y confirmar que la comunicación es exitosa.
+
+---
+
+## 💡 Notas para principiantes
+-   **MCP** es un estándar: Significa que si este servidor sigue las reglas de MCP, cualquier IA que entienda MCP podrá usarlo.
+-   **Tokens**: Si el servidor imprime "Error de Microsoft", probablemente el `REFRESH_TOKEN` haya expirado o sea incorrecto.
+-   **Seguridad**: Nunca compartas tu archivo `.env` con nadie, ya que contiene las llaves de tu OneDrive.
