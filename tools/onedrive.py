@@ -137,7 +137,14 @@ async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
     return f"✅ Renombrado a {new_filename}.json correctamente"
 
 
-async def add_blocks_to_bot(filename: str, nuevos_bloques: list, insert_after_id: str = "") -> str:
+async def add_blocks_to_bot(filename: str, nuevos_bloques, insert_after_id: str = "") -> str:
+    # ESCUDO ANTI-IA: Si Copilot manda un String mal formateado, lo forzamos a Lista
+    if isinstance(nuevos_bloques, str):
+        try:
+            nuevos_bloques = json.loads(nuevos_bloques.replace("'", '"'))
+        except:
+            nuevos_bloques = ast.literal_eval(nuevos_bloques)
+
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
     headers = {"Authorization": f"Bearer {token}"}

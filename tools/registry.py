@@ -39,27 +39,6 @@ TOOL_DEFINITIONS = [
         },
     },
     {
-        "name": "modify_json_onedrive",
-        "description": "Modifica o agrega una propiedad en un JSON",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "filename": {
-                    "type": "string",
-                    "description": "Nombre del archivo",
-                },
-                "key": {
-                    "type": "string",
-                    "description": "Propiedad a modificar",
-                },
-                "value": {
-                    "description": "Nuevo valor (puede ser cualquier tipo JSON)"
-                },
-            },
-            "required": ["filename", "key", "value"],
-        },
-    },
-    {
         "name": "delete_json_onedrive",
         "description": "Elimina un archivo JSON de OneDrive",
         "inputSchema": {
@@ -92,20 +71,33 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "modify_json_onedrive",
+        "description": "Modifica propiedades generales del archivo (como el 'nombre'). NUNCA uses esta herramienta para modificar el array de 'bloques'.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "filename": {"type": "string"},
+                "key": {"type": "string", "description": "Propiedad a modificar (NUNCA usar 'bloques')"},
+                "value": {"description": "Nuevo valor"}
+            },
+            "required": ["filename", "key", "value"],
+        },
+    },
+    {
         "name": "add_blocks_to_bot",
-        "description": "Agrega una lista de bloques al bot. Úsala siempre que el usuario pida agregar acciones.",
+        "description": "Agrega acciones al bot. ¡CRÍTICO: CADA BLOQUE DEBE TENER SU OBJETO 'parametros' COMPLETO Y RELLENADO CON LOS VALORES EXACTOS (ej: x, y, tiempo_ms)! Nunca dejes 'parametros' vacío.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "filename": {"type": "string"},
                 "nuevos_bloques": {
                     "type": "array", 
-                    "description": "Lista de objetos JSON de los bloques a agregar. No incluyas el campo 'id' ni 'position', el sistema los generará.",
+                    "description": "Lista de objetos JSON. IMPORTANTE: Rellena los 'parametros' de cada uno. No incluyas 'id' ni 'position'.",
                     "items": {"type": "object"}
                 },
                 "insert_after_id": {
                     "type": "string", 
-                    "description": "(Opcional) El ID del bloque existente después del cual se deben insertar. Si está vacío, van al final."
+                    "description": "(Opcional) ID del bloque posterior."
                 }
             },
             "required": ["filename", "nuevos_bloques"]
