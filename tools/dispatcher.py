@@ -39,5 +39,18 @@ async def dispatch_tool(tool_name: str, args: dict) -> str:
             args.get("old_filename"),
             args.get("new_filename"),
         )
+    
+    if tool_name == "add_blocks_to_bot":
+        return await add_blocks_to_bot(
+            args.get("filename"),
+            args.get("nuevos_bloques"),
+            args.get("insert_after_id"),
+        )
+
+    if tool_name == "remove_block_from_bot":
+        return await remove_block_from_bot(
+            args.get("filename"),
+            args.get("block_id"),
+        )
 
     raise ValueError(f"Herramienta '{tool_name}' no encontrada.")

@@ -91,4 +91,36 @@ TOOL_DEFINITIONS = [
             "required": ["old_filename", "new_filename"],
         },
     },
+    {
+        "name": "add_blocks_to_bot",
+        "description": "Agrega una lista de bloques al bot. Úsala siempre que el usuario pida agregar acciones.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "filename": {"type": "string"},
+                "nuevos_bloques": {
+                    "type": "array", 
+                    "description": "Lista de objetos JSON de los bloques a agregar. No incluyas el campo 'id' ni 'position', el sistema los generará.",
+                    "items": {"type": "object"}
+                },
+                "insert_after_id": {
+                    "type": "string", 
+                    "description": "(Opcional) El ID del bloque existente después del cual se deben insertar. Si está vacío, van al final."
+                }
+            },
+            "required": ["filename", "nuevos_bloques"]
+        }
+    },
+    {
+        "name": "remove_block_from_bot",
+        "description": "Elimina un bloque específico del bot usando su ID.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "filename": {"type": "string"},
+                "block_id": {"type": "string", "description": "El ID exacto del bloque a borrar (ej: blk_a1b2)"}
+            },
+            "required": ["filename", "block_id"]
+        }
+    }
 ]

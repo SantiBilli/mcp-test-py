@@ -135,3 +135,69 @@ async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
         )
 
     return f"✅ Renombrado a {new_filename}.json correctamente"
+
+
+async def add_blocks_to_bot(filename: str, nuevos_bloques: list, insert_after_id: str = "") -> str:
+    token = await get_access_token()
+    url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        get_res = await client.get(url, headers=headers)
+        if get_res.status_code == 404:
+            return f"❌ Error: El bot {filename} no existe."
+        get_res.raise_for_status()
+        data = get_res.json()
+        
+        for bloque in nuevos_bloques:
+            if "id" not in bloque:
+                bloque["id"] = f"blk_{uuid.uuid4().hex[:6]}"
+        
+        lista_bloques = data.get("bloques", [])
+        indice_insercion = len(lista_bloques)
+        
+        if insert_after_id:
+            for i, bloque in enumerate(lista_bloques):
+                if bloque.get("id") == insert_after_id:
+                    indice_insercion = i + 1
+                    break
+        
+        lista_bloques[indice_insercion:indice_insercion] = nuevos_bloques
+        
+        for i, b in enumerate(lista_bloques):
+            b["position"] = i
+            
+        data["bloques"] = lista_bloques
+        
+        headers["Content-Type"] = "application/json"
+        put_res = await client.put(url, headers=headers, content=json.dumps(data, indent=4))
+        put_res.raise_for_status()
+        
+    nombres = ", ".join([b.get("tipo", "desconocido") for b in nuevos_bloques])
+    return f"✅ Se agregaron los bloques ({nombres}) al bot {filename}."
+
+async def remove_block_from_bot(filename: str, block_id: str) -> str:
+    token = await get_access_token()
+    url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        get_res = await client.get(url, headers=headers)
+        get_res.raise_for_status()
+        data = get_res.json()
+        
+        lista_bloques = data.get("bloques", [])
+        nueva_lista = [b for b in lista_bloques if b.get("id") != block_id]
+        
+        if len(lista_bloques) == len(nueva_lista):
+            return f"⚠️ No se encontró ningún bloque con el ID {block_id}."
+            
+        for i, b in enumerate(nueva_lista):
+            b["position"] = i
+            
+        data["bloques"] = nueva_lista
+        
+        headers["Content-Type"] = "application/json"
+        await client.put(url, headers=headers, content=json.dumps(data, indent=4))
+        
+    return f"🗑️ Bloque {block_id} eliminado exitosamente."
