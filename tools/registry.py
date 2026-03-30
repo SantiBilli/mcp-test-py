@@ -85,19 +85,33 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_blocks_to_bot",
-        "description": "Agrega acciones al bot. ¡CRÍTICO: CADA BLOQUE DEBE TENER SU OBJETO 'parametros' COMPLETO Y RELLENADO CON LOS VALORES EXACTOS (ej: x, y, tiempo_ms)! Nunca dejes 'parametros' vacío.",
+        "description": "Agrega bloques de acciones al bot. REGLA OBLIGATORIA: cada bloque DEBE incluir 'tipo' y 'parametros' con TODOS sus valores rellenados. Está PROHIBIDO enviar 'parametros' vacío ({}). Si el usuario dice click en x=100 y=200, el bloque debe tener parametros: {x: 100, y: 200, boton: 'izquierdo', tipo_click: 'simple'}.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "filename": {"type": "string"},
                 "nuevos_bloques": {
-                    "type": "array", 
-                    "description": "Lista de objetos JSON. IMPORTANTE: Rellena los 'parametros' de cada uno. No incluyas 'id' ni 'position'.",
-                    "items": {"type": "object"}
+                    "type": "array",
+                    "description": "Array de bloques. No incluir 'id' ni 'position' (se generan automáticamente). OBLIGATORIO incluir 'parametros' completos en cada bloque.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "tipo": {
+                                "type": "string",
+                                "enum": ["inicio", "accion", "espera", "fin"],
+                                "description": "Tipo de bloque"
+                            },
+                            "parametros": {
+                                "type": "object",
+                                "description": "OBLIGATORIO. Parámetros del bloque según su tipo. Para 'inicio': {tecla_activacion: string}. Para 'accion': {boton: 'izquierdo'|'derecho', tipo_click: 'simple'|'doble', x: number, y: number}. Para 'espera': {tiempo_ms: number}. Para 'fin': {}."
+                            }
+                        },
+                        "required": ["tipo", "parametros"]
+                    }
                 },
                 "insert_after_id": {
-                    "type": "string", 
-                    "description": "(Opcional) ID del bloque posterior."
+                    "type": "string",
+                    "description": "(Opcional) ID del bloque después del cual insertar."
                 }
             },
             "required": ["filename", "nuevos_bloques"]
