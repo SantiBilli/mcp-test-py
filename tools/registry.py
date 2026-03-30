@@ -83,17 +83,42 @@ TOOL_DEFINITIONS = [
             "required": ["filename", "key", "value"],
         },
     },
-    {
+   {
         "name": "add_blocks_to_bot",
-        "description": "Agrega acciones al bot. ¡CRÍTICO: CADA BLOQUE DEBE TENER SU OBJETO 'parametros' COMPLETO Y RELLENADO CON LOS VALORES EXACTOS (ej: x, y, tiempo_ms)! Nunca dejes 'parametros' vacío.",
+        "description": "Agrega acciones al bot. ¡CRÍTICO: Rellena SIEMPRE el objeto 'parametros'!",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "filename": {"type": "string"},
                 "nuevos_bloques": {
                     "type": "array", 
-                    "description": "Lista de objetos JSON. IMPORTANTE: Rellena los 'parametros' de cada uno. No incluyas 'id' ni 'position'.",
-                    "items": {"type": "object"}
+                    "description": "Lista de bloques a insertar.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "tipo": {
+                                "type": "string", 
+                                "description": "El tipo de bloque: inicio, accion, espera, mensaje, condicion o fin."
+                            },
+                            "parametros": {
+                                "type": "object",
+                                "description": "Objeto con los valores del bloque. NUNCA VACÍO para accion o espera.",
+                                "properties": {
+                                    "x": {"type": "integer"},
+                                    "y": {"type": "integer"},
+                                    "boton": {"type": "string"},
+                                    "tipo_click": {"type": "string"},
+                                    "tiempo_ms": {"type": "integer"},
+                                    "tecla_activacion": {"type": "string"},
+                                    "texto": {"type": "string"},
+                                    "color_esperado_hex": {"type": "string"},
+                                    "siguiente_bloque_si_cumple": {"type": "string"},
+                                    "siguiente_bloque_si_falla": {"type": "string"}
+                                }
+                            }
+                        },
+                        "required": ["tipo", "parametros"]
+                    }
                 },
                 "insert_after_id": {
                     "type": "string", 
