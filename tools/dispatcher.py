@@ -9,7 +9,10 @@ from tools.onedrive import (
     modify_json_onedrive,
     delete_json_onedrive,
     rename_json_onedrive,
+    add_blocks_to_bot,
+    remove_block_from_bot
 )
+
 from tools.get_weather import handle_get_weather
 
 
