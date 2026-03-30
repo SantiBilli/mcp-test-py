@@ -28,7 +28,7 @@ async def dispatch_tool(tool_name: str, args: dict) -> str:
         return await modify_json_onedrive(
             args.get("filename"),
             args.get("key"),
-            str(args.get("value")),
+            args.get("value"),
         )
 
     if tool_name == "delete_json_onedrive":
