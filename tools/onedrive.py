@@ -1,4 +1,3 @@
-import sys
 import os
 import json
 import httpx
@@ -9,7 +8,6 @@ CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
 REFRESH_TOKEN = os.getenv("MICROSOFT_REFRESH_TOKEN")
 
 async def get_access_token():
-    """Genera un access token temporal usando el refresh token."""
     url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
     data = {
         "client_id": CLIENT_ID,
@@ -20,18 +18,17 @@ async def get_access_token():
     async with httpx.AsyncClient() as client:
         res = await client.post(url, data=data)
         if res.status_code != 200:
-            print(f"🚨 RECHAZO DE MICROSOFT: {res.text}")
             raise Exception(f"Microsoft rechazó el acceso: {res.text}")
         return res.json()["access_token"]
 
+
 async def create_json_onedrive(filename: str) -> str:
-    """Crea un archivo JSON en la carpeta AutoClickFiles con la estructura base estricta."""
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
     
     bot_id = f"BOT_{uuid.uuid4().hex[:6].upper()}"
     
-    estructura_base = {
+    data = {
         "id": bot_id,
         "nombre": filename,
         "bloques": []
@@ -40,54 +37,101 @@ async def create_json_onedrive(filename: str) -> str:
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     
     async with httpx.AsyncClient() as client:
-        res = await client.put(url, headers=headers, content=json.dumps(estructura_base, indent=4))
+        res = await client.put(url, headers=headers, content=json.dumps(data, indent=4))
         res.raise_for_status()
-    return f"✅ Archivo {filename}.json creado con éxito. ID asignado: {bot_id}"
+
+    return f"✅ Archivo {filename}.json creado. ID: {bot_id}"
+
 
 async def read_json_onedrive(filename: str) -> str:
-    """Lee y devuelve el contenido de un archivo JSON específico."""
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
+    
     headers = {"Authorization": f"Bearer {token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         res = await client.get(url, headers=headers)
         if res.status_code == 404:
-            return f"❌ Error: El archivo {filename}.json no existe en OneDrive."
-        res.raise_for_status()
+            return f"❌ {filename}.json no existe"
         
+        res.raise_for_status()
         contenido = json.dumps(res.json(), indent=4)
-        return f"📄 Contenido de {filename}.json:\n```json\n{contenido}\n```"
 
-async def modify_json_onedrive(filename: str, key: str, value: str) -> str:
-    """Modifica o agrega un valor en un archivo JSON existente en AutoClickFiles."""
+    return f"📄 {filename}.json:\n```json\n{contenido}\n```"
+
+
+async def modify_json_onedrive(filename: str, key: str, value) -> str:
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
+    
     headers = {"Authorization": f"Bearer {token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
-        get_res = await client.get(url, headers=headers)
-        if get_res.status_code == 404:
-            return f"❌ Error: El archivo {filename}.json no existe en OneDrive."
-        get_res.raise_for_status()
-        data = get_res.json()
+        res = await client.get(url, headers=headers)
+        if res.status_code == 404:
+            return f"❌ {filename}.json no existe"
         
+        res.raise_for_status()
+        data = res.json()
+
         data[key] = value
-        
+
         headers["Content-Type"] = "application/json"
-        put_res = await client.put(url, headers=headers, content=json.dumps(data, indent=4))
-        put_res.raise_for_status()
-    return f"✅ Archivo {filename}.json modificado. Clave '{key}' actualizada a '{value}'."
+        await client.put(url, headers=headers, content=json.dumps(data, indent=4))
+
+    return f"✅ {filename}.json actualizado"
+
 
 async def delete_json_onedrive(filename: str) -> str:
-    """Elimina un archivo JSON de la carpeta AutoClickFiles en OneDrive."""
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json"
+    
     headers = {"Authorization": f"Bearer {token}"}
     
     async with httpx.AsyncClient() as client:
         res = await client.delete(url, headers=headers)
         if res.status_code == 404:
-            return f"❌ Error: El archivo {filename}.json no existe."
+            return f"❌ {filename}.json no existe"
+        
         res.raise_for_status()
-    return f"🗑️ Archivo {filename}.json eliminado correctamente de OneDrive."
+
+    return f"🗑️ {filename}.json eliminado"
+
+
+async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
+    token = await get_access_token()
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        meta_url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{old_filename}.json"
+        meta_res = await client.get(meta_url, headers=headers)
+
+        if meta_res.status_code == 404:
+            return f"❌ {old_filename}.json no existe"
+
+        meta_res.raise_for_status()
+        file_id = meta_res.json()["id"]
+
+        patch_url = f"https://graph.microsoft.com/v1.0/me/drive/items/{file_id}"
+        await client.patch(
+            patch_url,
+            headers={**headers, "Content-Type": "application/json"},
+            json={"name": f"{new_filename}.json"}
+        )
+
+        content_url = f"https://graph.microsoft.com/v1.0/me/drive/items/{file_id}/content"
+        res = await client.get(content_url, headers=headers)
+        res.raise_for_status()
+
+        data = res.json()
+
+        data["nombre"] = new_filename
+
+        await client.put(
+            content_url,
+            headers={**headers, "Content-Type": "application/json"},
+            content=json.dumps(data, indent=4)
+        )
+
+    return f"✅ Renombrado a {new_filename}.json correctamente"

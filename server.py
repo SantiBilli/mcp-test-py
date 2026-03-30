@@ -9,7 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from tools.onedrive import create_json_onedrive, read_json_onedrive, modify_json_onedrive, delete_json_onedrive
+from tools.onedrive import create_json_onedrive, read_json_onedrive, modify_json_onedrive, delete_json_onedrive, rename_json_onedrive
 from tools.get_weather import handle_get_weather
 
 async def mcp_direct_handler(request: Request):
@@ -96,6 +96,24 @@ async def mcp_direct_handler(request: Request):
                             },
                             "required": ["filename"]
                         }
+                    },
+                    {
+                        "name": "rename_json_onedrive",
+                        "description": "Renombra un archivo JSON y actualiza su nombre interno",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                            "old_filename": {
+                                "type": "string",
+                                "description": "Nombre actual"
+                            },
+                            "new_filename": {
+                                "type": "string",
+                                "description": "Nuevo nombre"
+                            }
+                            },
+                            "required": ["old_filename", "new_filename"]
+                        }
                     }
                 ]
             }
@@ -120,6 +138,8 @@ async def mcp_direct_handler(request: Request):
                 result_text = await modify_json_onedrive(args.get("filename"), args.get("key"), str(args.get("value")))
             elif tool_name == "delete_json_onedrive":
                 result_text = await delete_json_onedrive(args.get("filename"))
+            elif tool_name == "rename_json_onedrive":
+                result_text = await rename_json_onedrive(args.get("old_filename"), args.get("new_filename"))
             else:
                 result_text = f"Herramienta {tool_name} no encontrada."
         except Exception as e:
