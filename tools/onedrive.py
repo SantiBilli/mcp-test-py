@@ -2,6 +2,7 @@ import os
 import json
 import httpx
 import uuid 
+import ast
 
 CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
