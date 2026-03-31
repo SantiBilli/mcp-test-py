@@ -1,8 +1,3 @@
-"""
-Dispatcher de herramientas MCP.
-Mapea el nombre de cada tool a la función que la ejecuta.
-"""
-
 from tools.onedrive import (
     create_json_onedrive,
     read_json_onedrive,
