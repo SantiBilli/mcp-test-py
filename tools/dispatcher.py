@@ -1,8 +1,3 @@
-"""
-Dispatcher de herramientas MCP.
-Mapea el nombre de cada tool a la función que la ejecuta.
-"""
-
 from tools.onedrive import (
     create_json_onedrive,
     read_json_onedrive,
@@ -10,7 +5,8 @@ from tools.onedrive import (
     delete_json_onedrive,
     rename_json_onedrive,
     add_blocks_to_bot,
-    remove_block_from_bot
+    remove_block_from_bot,
+    list_bots_onedrive
 )
 
 from tools.get_weather import handle_get_weather
@@ -55,5 +51,8 @@ async def dispatch_tool(tool_name: str, args: dict) -> str:
             args.get("filename"),
             args.get("block_id"),
         )
+
+    if tool_name == "list_bots_onedrive":
+        return await list_bots_onedrive()
 
     raise ValueError(f"Herramienta '{tool_name}' no encontrada.")

@@ -22,7 +22,6 @@ async def get_access_token():
             raise Exception(f"Microsoft rechazó el acceso: {res.text}")
         return res.json()["access_token"]
 
-
 async def create_json_onedrive(filename: str) -> str:
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
@@ -43,7 +42,6 @@ async def create_json_onedrive(filename: str) -> str:
 
     return f"✅ Archivo {filename}.json creado. ID: {bot_id}"
 
-
 async def read_json_onedrive(filename: str) -> str:
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
@@ -59,7 +57,6 @@ async def read_json_onedrive(filename: str) -> str:
         contenido = json.dumps(res.json(), indent=4)
 
     return f"📄 {filename}.json:\n```json\n{contenido}\n```"
-
 
 async def modify_json_onedrive(filename: str, key: str, value) -> str:
     token = await get_access_token()
@@ -82,7 +79,6 @@ async def modify_json_onedrive(filename: str, key: str, value) -> str:
 
     return f"✅ {filename}.json actualizado"
 
-
 async def delete_json_onedrive(filename: str) -> str:
     token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json"
@@ -97,7 +93,6 @@ async def delete_json_onedrive(filename: str) -> str:
         res.raise_for_status()
 
     return f"🗑️ {filename}.json eliminado"
-
 
 async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
     token = await get_access_token()
@@ -137,9 +132,7 @@ async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
 
     return f"✅ Renombrado a {new_filename}.json correctamente"
 
-
 async def add_blocks_to_bot(filename: str, nuevos_bloques, insert_after_id: str = "") -> str:
-    # ESCUDO ANTI-IA: Si Copilot manda un String mal formateado, lo forzamos a Lista
     if isinstance(nuevos_bloques, str):
         try:
             nuevos_bloques = json.loads(nuevos_bloques.replace("'", '"'))
@@ -209,3 +202,33 @@ async def remove_block_from_bot(filename: str, block_id: str) -> str:
         await client.put(url, headers=headers, content=json.dumps(data, indent=4))
         
     return f"🗑️ Bloque {block_id} eliminado exitosamente."
+
+async def list_bots_onedrive() -> str:
+    token = await get_access_token()
+    url = "https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles:/children"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        res = await client.get(url, headers=headers)
+        
+        if res.status_code == 404:
+            return "📂 La carpeta AutoClickFiles está vacía o todavía no existe."
+            
+        res.raise_for_status()
+        data = res.json()
+        
+        archivos = data.get("value", [])
+        
+        if not archivos:
+            return "📂 No tienes ningún bot guardado actualmente."
+            
+        lista_nombres = [
+            f"- {file.get('name').replace('.json', '')}" 
+            for file in archivos if file.get("name", "").endswith(".json")
+        ]
+        
+        if not lista_nombres:
+            return "📂 La carpeta existe, pero no hay bots válidos adentro."
+            
+        resultado = "\n".join(lista_nombres)
+        return f"🤖 Bots disponibles en tu cuenta:\n{resultado}"
