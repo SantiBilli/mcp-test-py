@@ -7,7 +7,6 @@ app = msal.PublicClientApplication(
     authority="https://login.microsoftonline.com/consumers"
 )
 
-# ¡Le quitamos el offline_access porque MSAL ya lo pide por defecto!
 flow = app.initiate_device_flow(scopes=["Files.ReadWrite"])
 
 if "user_code" not in flow:
