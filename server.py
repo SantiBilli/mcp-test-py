@@ -11,12 +11,10 @@ from api.routes import api_routes
 
 app = Starlette(
     routes=[
-        # Rutas del MCP
         Route("/", endpoint=mcp_handler, methods=["POST", "GET"]),
         Route("/sse", endpoint=mcp_handler, methods=["POST", "GET"]),
         Route("/messages", endpoint=mcp_handler, methods=["POST", "GET"]),
 
-        # Rutas API para el Frontend (React)
         *api_routes,
     ]
 )
