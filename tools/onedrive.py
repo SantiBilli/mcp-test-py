@@ -1,29 +1,9 @@
-import os
 import json
 import httpx
 import uuid 
 import ast
 
-CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
-CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
-REFRESH_TOKEN = os.getenv("MICROSOFT_REFRESH_TOKEN")
-
-async def get_access_token():
-    url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
-    data = {
-        "client_id": CLIENT_ID,
-        "refresh_token": REFRESH_TOKEN,
-        "grant_type": "refresh_token",
-    }
-    
-    async with httpx.AsyncClient() as client:
-        res = await client.post(url, data=data)
-        if res.status_code != 200:
-            raise Exception(f"Microsoft rechazó el acceso: {res.text}")
-        return res.json()["access_token"]
-
-async def create_json_onedrive(filename: str) -> str:
-    token = await get_access_token()
+async def create_json_onedrive(filename: str, user_token: str) -> str:
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
     
     bot_id = f"BOT_{uuid.uuid4().hex[:6].upper()}"
@@ -34,7 +14,7 @@ async def create_json_onedrive(filename: str) -> str:
         "bloques": []
     }
 
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {user_token}", "Content-Type": "application/json"}
     
     async with httpx.AsyncClient() as client:
         res = await client.put(url, headers=headers, content=json.dumps(data, indent=4))
@@ -42,11 +22,10 @@ async def create_json_onedrive(filename: str) -> str:
 
     return f"✅ Archivo {filename}.json creado. ID: {bot_id}"
 
-async def read_json_onedrive(filename: str) -> str:
-    token = await get_access_token()
+async def read_json_onedrive(filename: str, user_token: str) -> str:
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
     
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         res = await client.get(url, headers=headers)
@@ -58,11 +37,10 @@ async def read_json_onedrive(filename: str) -> str:
 
     return f"📄 {filename}.json:\n```json\n{contenido}\n```"
 
-async def modify_json_onedrive(filename: str, key: str, value) -> str:
-    token = await get_access_token()
+async def modify_json_onedrive(filename: str, key: str, value, user_token: str) -> str:
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
     
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         res = await client.get(url, headers=headers)
@@ -79,11 +57,10 @@ async def modify_json_onedrive(filename: str, key: str, value) -> str:
 
     return f"✅ {filename}.json actualizado"
 
-async def delete_json_onedrive(filename: str) -> str:
-    token = await get_access_token()
+async def delete_json_onedrive(filename: str, user_token: str) -> str:
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json"
     
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
     
     async with httpx.AsyncClient() as client:
         res = await client.delete(url, headers=headers)
@@ -94,10 +71,8 @@ async def delete_json_onedrive(filename: str) -> str:
 
     return f"🗑️ {filename}.json eliminado"
 
-async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
-    token = await get_access_token()
-
-    headers = {"Authorization": f"Bearer {token}"}
+async def rename_json_onedrive(old_filename: str, new_filename: str, user_token: str) -> str:
+    headers = {"Authorization": f"Bearer {user_token}"}
 
     async with httpx.AsyncClient(follow_redirects=True) as client:
         meta_url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{old_filename}.json"
@@ -121,7 +96,6 @@ async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
         res.raise_for_status()
 
         data = res.json()
-
         data["nombre"] = new_filename
 
         await client.put(
@@ -132,16 +106,15 @@ async def rename_json_onedrive(old_filename: str, new_filename: str) -> str:
 
     return f"✅ Renombrado a {new_filename}.json correctamente"
 
-async def add_blocks_to_bot(filename: str, nuevos_bloques, insert_after_id: str = "") -> str:
+async def add_blocks_to_bot(filename: str, nuevos_bloques, user_token: str, insert_after_id: str = "") -> str:
     if isinstance(nuevos_bloques, str):
         try:
             nuevos_bloques = json.loads(nuevos_bloques.replace("'", '"'))
         except:
             nuevos_bloques = ast.literal_eval(nuevos_bloques)
 
-    token = await get_access_token()
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         get_res = await client.get(url, headers=headers)
@@ -177,10 +150,9 @@ async def add_blocks_to_bot(filename: str, nuevos_bloques, insert_after_id: str 
     nombres = ", ".join([b.get("tipo", "desconocido") for b in nuevos_bloques])
     return f"✅ Se agregaron los bloques ({nombres}) al bot {filename}."
 
-async def remove_block_from_bot(filename: str, block_id: str) -> str:
-    token = await get_access_token()
+async def remove_block_from_bot(filename: str, block_id: str, user_token: str) -> str:
     url = f"https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles/{filename}.json:/content"
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         get_res = await client.get(url, headers=headers)
@@ -203,10 +175,9 @@ async def remove_block_from_bot(filename: str, block_id: str) -> str:
         
     return f"🗑️ Bloque {block_id} eliminado exitosamente."
 
-async def list_bots_onedrive() -> str:
-    token = await get_access_token()
+async def list_bots_onedrive(user_token: str) -> str:
     url = "https://graph.microsoft.com/v1.0/me/drive/root:/AutoClickFiles:/children"
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {user_token}"}
     
     async with httpx.AsyncClient(follow_redirects=True) as client:
         res = await client.get(url, headers=headers)
@@ -231,4 +202,4 @@ async def list_bots_onedrive() -> str:
             return "📂 La carpeta existe, pero no hay bots válidos adentro."
             
         resultado = "\n".join(lista_nombres)
-        return f"🤖 Bots disponibles en tu cuenta:\n{resultado}"
+        return f"🤖 Bots disponibles en tu cuenta:\n{resultado}"
