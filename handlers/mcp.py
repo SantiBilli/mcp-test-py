@@ -17,7 +17,6 @@ def _jsonrpc_response(msg_id, result: dict) -> JSONResponse:
 
 
 async def mcp_handler(request: Request) -> JSONResponse:
-
     try:
         payload = await request.json()
     except Exception:
@@ -43,6 +42,16 @@ async def mcp_handler(request: Request) -> JSONResponse:
         params = payload.get("params", {})
         tool_name = params.get("name")
         args = params.get("arguments", {})
+
+        auth_header = request.headers.get("Authorization")
+        
+        if auth_header and auth_header.startswith("Bearer "):
+            user_token = auth_header.replace("Bearer ", "").strip()
+            args["user_token"] = user_token
+        else:
+            return _jsonrpc_response(msg_id, {
+                "content": [{"type": "text", "text": "❌ Acceso Denegado: Copilot no envió el token de seguridad corporativo en las cabeceras."}],
+            })
 
         print(f"⚙️ Ejecutando: {tool_name} con {args}")
 

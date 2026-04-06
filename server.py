@@ -7,7 +7,7 @@ from starlette.middleware.cors import CORSMiddleware
 load_dotenv()
 
 from handlers.mcp import mcp_handler
-from api.routes import api_routes
+# from api.routes import api_routes
 
 app = Starlette(
     routes=[
@@ -15,7 +15,7 @@ app = Starlette(
         Route("/sse", endpoint=mcp_handler, methods=["POST", "GET"]),
         Route("/messages", endpoint=mcp_handler, methods=["POST", "GET"]),
 
-        *api_routes,
+        # *api_routes,
     ]
 )
 
